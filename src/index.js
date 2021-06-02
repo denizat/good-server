@@ -40,8 +40,25 @@ console.log(fs.readdirSync(path.resolve(folder)));
 
 const root = folder;
 
+const prevFolder = (dir) => {
+  dir = dir.split("/");
+  if (dir.length < 3) {
+    return ".";
+  }
+  dir.pop();
+  return dir.join("/");
+};
+
+let s = "/Archive/Documents";
+console.log(s.split("/").join("/"));
+
 const makeHTML = (dir, stringArr) => {
-  let html = "";
+  if (dir === "/") {
+    dir = ".";
+  }
+  let html = `<div><a href="${prevFolder(dir)}">..</a> =:= ${prevFolder(
+    dir
+  )} dir:::${dir} </div>`;
   stringArr.forEach((file) => {
     let link = dir + "/" + file;
     html += `<div><a href="${link}">${file}</a> =:= ${link} dir:::${dir} </div>`;
