@@ -1,9 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-
-const PORT = 8081;
-
+const PORT = 8080;
 const mimeTypes = {
   ".html": "text/html",
   ".js": "text/javascript",
@@ -11,6 +9,7 @@ const mimeTypes = {
   ".json": "application/json",
   ".png": "image/png",
   ".jpg": "image/jpg",
+  ".jpeg": "image/jpeg",
   ".gif": "image/gif",
   ".svg": "image/svg+xml",
   ".wav": "audio/wav",
@@ -22,50 +21,63 @@ const mimeTypes = {
   ".eot": "application/vnd.ms-fontobject",
   ".otf": "application/font-otf",
   ".wasm": "application/wasm",
+  ".pdf": "application/pdf",
 };
 
 let folder;
 if (process.argv[2]) {
-  folder = process.argv[2];
+  if (process.argv[2] === ".") {
+    folder = ".";
+  } else {
+    folder = process.argv[2];
+  }
 } else {
   folder = ".";
 }
 
+console.log(folder);
+console.log(fs.readdirSync(path.resolve(folder)));
+
+const root = folder;
+
+const makeHTML = (dir, stringArr) => {
+  let html = "";
+  stringArr.forEach((file) => {
+    let link = dir + "/" + file;
+    html += `<div><a href="${link}">${file}</a> =:= ${link} dir:::${dir} </div>`;
+  });
+  return html;
+};
+
 const server = http.createServer((req, res) => {
-  let dir = folder + req.url.replaceAll("%20", " ");
-  console.log(`request: ${dir}`);
+  let url = req.url.replaceAll("%20", " "); //.slice(1);
+  console.log(url);
 
-  if (fs.existsSync(dir)) {
-    fs.lstat(dir, (err, stats) => {
-      if (stats.isDirectory()) {
-        fs.readdir(dir, (err, files) => {
-          res.writeHead(200, { "Content-Type": "text/html" });
-          res.end(files.toString(), "utf-8");
+  fs.lstat(root + url, (err, stats) => {
+    if (err) {
+      console.log(err);
+      res.writeHead(200, { "Content-Type": "text/html" });
+      res.end("sorry bro, error", "utf-8");
+    } else if (stats.isDirectory()) {
+      fs.readdir(folder + url, (err, files) => {
+        res.writeHead(200, { "Content-Type": "text/html" });
+        res.end(makeHTML(url, files), "utf-8");
+      });
+    } else if (stats.isFile()) {
+      fs.readFile(root + url, (err, file) => {
+        let extname = String(path.extname(root + url)).toLowerCase();
+        res.writeHead(200, {
+          "Content-Type": mimeTypes[extname] || "text/plain",
         });
-      } else if (stats.isFile()) {
-        let extname = String(path.extname(dir)).toLowerCase();
-        res.writeHead(200, { "Content-Type": extname });
-        fs.readFile(dir, (err, content) => {
-          res.end(content, "utf-8");
-        });
-      }
-    });
-  }
+        res.end(file, "utf-8");
+      });
+    } else {
+      res.writeHead(200, { "Content-Type": "text/html" });
+      res.end("something went wrong", "utf-8");
+    }
+  });
 
-  //   fs.readFile("./index.html", (err, content) => {
-  //     if (err) {
-  //       if (err.code == "ENOENT") {
-  //         res.writeHead(404, { "Content-Type": "text/html" });
-  //         res.end(content, "utf-8");
-  //       } else {
-  //         res.writeHead(500);
-  //         res.end("Bruh it doesn't work, sorry" + err.code + " ..\n");
-  //       }
-  //     } else {
-  //       res.writeHead(200, { "Content-Type": "text/html" });
-  //       res.end(content, "utf-8");
-  //     }
-  //   });
+  //   res.end(root + url, "utf-8");
 });
 server.listen(PORT);
 
