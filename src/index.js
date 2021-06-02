@@ -1,6 +1,25 @@
+const { networkInterfaces } = require("os");
+
+const nets = networkInterfaces();
+const results = Object.create(null); // Or just '{}', an empty object
+
+for (const name of Object.keys(nets)) {
+  for (const net of nets[name]) {
+    // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
+    if (net.family === "IPv4" && !net.internal) {
+      if (!results[name]) {
+        results[name] = [];
+      }
+      results[name].push(net.address);
+    }
+  }
+}
+console.log(results);
+
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const { parse } = require("querystring");
 const PORT = 8080;
 const mimeTypes = {
   ".html": "text/html",
@@ -34,10 +53,6 @@ if (process.argv[2]) {
 } else {
   folder = ".";
 }
-
-console.log(folder);
-console.log(fs.readdirSync(path.resolve(folder)));
-
 const root = folder;
 
 const prevFolder = (dir) => {
@@ -49,14 +64,31 @@ const prevFolder = (dir) => {
   return dir.join("/");
 };
 
-let s = "/Archive/Documents";
-console.log(s.split("/").join("/"));
-
 const makeHTML = (dir, stringArr) => {
   if (dir === "/") {
     dir = ".";
   }
-  let html = `<div><a href="${prevFolder(dir)}">..</a> =:= ${prevFolder(
+  let html = `
+  <h1>Index of ${dir}/</h1>
+
+---
+<form action="${dir}" method="post" enctype="multipart/form-data">
+  <label for="file">Upload a file</label>
+    <input type="file" id="file" name="file">
+  <input type="submit">
+</form>
+---
+            <form action="/" method="post">
+                <input type="text" name="fname" /><br />
+                <input type="number" name="age" /><br />
+                <input type="file" name="photo" /><br />
+                <button>Save</button>
+            </form>
+
+
+
+
+  <div><a href="${prevFolder(dir)}">..</a> =:= ${prevFolder(
     dir
   )} dir:::${dir} </div>`;
   stringArr.forEach((file) => {
@@ -69,6 +101,17 @@ const makeHTML = (dir, stringArr) => {
 const server = http.createServer((req, res) => {
   let url = req.url.replaceAll("%20", " "); //.slice(1);
   console.log(url);
+
+  if (req.method === "POST") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk.toString(); // convert Buffer to string
+      // fs.writeFile(root + url + )
+    });
+    req.on("end", () => {
+      console.log(parse(body));
+    });
+  }
 
   fs.lstat(root + url, (err, stats) => {
     if (err) {
@@ -99,3 +142,16 @@ const server = http.createServer((req, res) => {
 server.listen(PORT);
 
 console.log(`Server running at http://127.0.0.1:${PORT}/`);
+
+// // Opens the port in the browser.
+// var url = `http://localhost:${PORT}`;
+// var start =
+//   process.platform == "darwin"
+//     ? "open"
+//     : process.platform == "win32"
+//     ? "start"
+//     : "xdg-open";
+// require("child_process").exec(start + " " + url);
+
+// const { argv } = require("process");
+// console.log(argv.find((value, index) => value === "-p"));
