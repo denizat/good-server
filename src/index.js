@@ -32,22 +32,26 @@ const getData = (data, boundary) => {
   betterData = betterData[0].slice(0, lastIndex);
   // console.log(betterData);
   realData = betterData.split("\r\n");
+
+  let name = realData[1];
+  name = name.slice(name.search("filename="), name.lenght);
+  name = name.split('"');
+  name = name.slice(1, name.lenght).join("");
+
   // console.log(realData);
   realData = realData.splice(4, realData.length).join("\r\n");
   // console.log(realData);
-  return realData;
+  return { data: realData, fileName: name };
 };
 
 const server = http.createServer((req, res) => {
   // Some files have spaces in their name so the url we get has to be fixed
   let url = req.url.replaceAll("%20", " ");
 
-  /////////////////////////////////////////////////////////////////////////////////// --- DANGER ZONE ---
-  // Handles file uploads (THIS IS BROKEN)
   if (req.method === "POST") {
     if (req.headers["content-type"] === "multipart/form-data") {
       // Use latin1 encoding to parse binary files correctly
-      req.setEncoding("latin1");
+      req.setEncoding("binary");
     }
 
     let rawData = "";
@@ -59,23 +63,24 @@ const server = http.createServer((req, res) => {
     req.on("end", () => {
       boundary = getBoundary(req);
       let result = {};
-      console.log("RawData: ", rawData);
-      console.log("Boundary: ", boundary);
+      // console.log("RawData: ", rawData);
+      // console.log(rawData.split(boundary));
+      // console.log("Boundary: ", boundary);
       let realData = getData(rawData, boundary);
-      console.log("REALDATA", realData);
-      fs.writeFile("a.out", realData, "utf8", (err) => {
-        if (err) {
-          console.log(err);
+      // console.log("REALDATA", realData.data);
+      // console.log("PATH:::", root + url + realData.fileName);
+      fs.writeFile(
+        root + url + realData.fileName,
+        realData.data,
+        "utf8",
+        (err) => {
+          if (err) {
+            console.log(err);
+          }
         }
-      });
-
-      // console.log(rawDataArr[1].split("Content")[1]);
-      // for (const item of rawDataArr) {
-      //   console.log("An item:", item);
-      // }
+      );
     });
   }
-  /////////////////////////////////////////////////////////////////////////////////// --- DANGER ZONE ---
 
   // Get stats on requested folder/file so that we can handle it properly
   fs.lstat(root + url, (err, stats) => {

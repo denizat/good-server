@@ -46,7 +46,7 @@ if (argv.find((value) => value === "-o")) {
 // Handles which folder will be the root of server
 let folder;
 const lastArg = argv[argv.length - 1];
-if (fs.existsSync(lastArg)) {
+if (fs.existsSync(lastArg) && fs.lstatSync(lastArg).isDirectory()) {
   if (lastArg === ".") {
     folder = ".";
   } else {
