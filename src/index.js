@@ -1,9 +1,12 @@
+/**
+ * This gets your private ip address so you know what to open on different local computers.
+ */
 const { networkInterfaces } = require("os");
-
 const nets = networkInterfaces();
 const results = Object.create(null); // Or just '{}', an empty object
-
+let names = [];
 for (const name of Object.keys(nets)) {
+  names.push(name);
   for (const net of nets[name]) {
     // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
     if (net.family === "IPv4" && !net.internal) {
@@ -14,13 +17,22 @@ for (const name of Object.keys(nets)) {
     }
   }
 }
-console.log(results);
+console.log(names);
+console.log(results[names[1]]);
+
+const { argv } = require("process");
+let PORT = 8080;
+const pFlagIndex = argv.findIndex((value) => value === "-p");
+if (pFlagIndex !== -1) {
+  PORT = argv[pFlagIndex + 1];
+}
 
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const { parse } = require("querystring");
-const PORT = 8080;
+const qs = require("querystring");
+
+// These handle how the file extensions should be displayed
 const mimeTypes = {
   ".html": "text/html",
   ".js": "text/javascript",
@@ -43,18 +55,25 @@ const mimeTypes = {
   ".pdf": "application/pdf",
 };
 
+// Handles which folder will be the root of server
 let folder;
-if (process.argv[2]) {
-  if (process.argv[2] === ".") {
+const lastArg = argv[argv.length - 1];
+if (fs.existsSync(lastArg)) {
+  if (lastArg === ".") {
     folder = ".";
   } else {
-    folder = process.argv[2];
+    folder = lastArg;
   }
 } else {
   folder = ".";
 }
 const root = folder;
 
+/**
+ *
+ * @param {string} dir The current directory
+ * @returns {string} The previous directory
+ */
 const prevFolder = (dir) => {
   dir = dir.split("/");
   if (dir.length < 3) {
@@ -64,6 +83,12 @@ const prevFolder = (dir) => {
   return dir.join("/");
 };
 
+/**
+ *
+ * @param {string} dir The current directory
+ * @param {string[]} stringArr All of the folders/files in the directory
+ * @returns {string} HTML for the current directory
+ */
 const makeHTML = (dir, stringArr) => {
   if (dir === "/") {
     dir = ".";
@@ -74,7 +99,7 @@ const makeHTML = (dir, stringArr) => {
 ---
 <form action="${dir}" method="post" enctype="multipart/form-data">
   <label for="file">Upload a file</label>
-    <input type="file" id="file" name="file">
+    <input type="file" id="file" name="da_file">
   <input type="submit">
 </form>
 ---
@@ -99,20 +124,27 @@ const makeHTML = (dir, stringArr) => {
 };
 
 const server = http.createServer((req, res) => {
-  let url = req.url.replaceAll("%20", " "); //.slice(1);
-  console.log(url);
+  // Some files have spaces in their name so the url we get has to be fixed
+  let url = req.url.replaceAll("%20", " ");
 
+  // Handles file uploads
   if (req.method === "POST") {
-    let body = "";
+    if (req.headers["content-type"] === "multipart/form-data") {
+      // Use latin1 encoding to parse binary files correctly
+      req.setEncoding("latin1");
+    }
+
+    let rawData = "";
     req.on("data", (chunk) => {
-      body += chunk.toString(); // convert Buffer to string
+      rawData += chunk; //.toString(); // convert Buffer to string
       // fs.writeFile(root + url + )
     });
     req.on("end", () => {
-      console.log(parse(body));
+      console.log(qs.decode(rawData));
     });
   }
 
+  // Get stats on requested folder/file
   fs.lstat(root + url, (err, stats) => {
     if (err) {
       console.log(err);
@@ -136,22 +168,19 @@ const server = http.createServer((req, res) => {
       res.end("something went wrong", "utf-8");
     }
   });
-
-  //   res.end(root + url, "utf-8");
 });
 server.listen(PORT);
 
-console.log(`Server running at http://127.0.0.1:${PORT}/`);
+// Opens url in browser if -o flag is given
+let url = `http://${results[names[1]]}:${+PORT}/`;
+console.log(`Server running at: ${url}`);
 
-// // Opens the port in the browser.
-// var url = `http://localhost:${PORT}`;
-// var start =
-//   process.platform == "darwin"
-//     ? "open"
-//     : process.platform == "win32"
-//     ? "start"
-//     : "xdg-open";
-// require("child_process").exec(start + " " + url);
-
-// const { argv } = require("process");
-// console.log(argv.find((value, index) => value === "-p"));
+if (argv.find((value) => value === "-o")) {
+  var start =
+    process.platform == "darwin"
+      ? "open"
+      : process.platform == "win32"
+      ? "start"
+      : "xdg-open";
+  require("child_process").exec(start + " " + url);
+}
