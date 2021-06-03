@@ -1,119 +1,11 @@
-/**
- * This gets your private ip address so you know what to open on different local computers.
- */
-const { networkInterfaces } = require("os");
-const nets = networkInterfaces();
-const results = Object.create(null); // Or just '{}', an empty object
-let names = [];
-for (const name of Object.keys(nets)) {
-  names.push(name);
-  for (const net of nets[name]) {
-    // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
-    if (net.family === "IPv4" && !net.internal) {
-      if (!results[name]) {
-        results[name] = [];
-      }
-      results[name].push(net.address);
-    }
-  }
-}
-// console.log(names);
-// console.log(results[names[1]]);
-
-const { argv } = require("process");
-let PORT = 8080;
-const pFlagIndex = argv.findIndex((value) => value === "-p");
-if (pFlagIndex !== -1) {
-  PORT = argv[pFlagIndex + 1];
-}
+const { folder, PORT } = require("./cli");
+const root = folder;
+const { mimeTypes, makeHTML } = require("./html");
 
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const qs = require("querystring");
-
-// These handle how the file extensions should be displayed
-const mimeTypes = {
-  ".html": "text/html",
-  ".js": "text/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".wav": "audio/wav",
-  ".opus": "audio/ogg",
-  ".m4a": "audio/mp4",
-  ".mp4": "video/mp4",
-  ".woff": "application/font-woff",
-  ".ttf": "application/font-ttf",
-  ".eot": "application/vnd.ms-fontobject",
-  ".otf": "application/font-otf",
-  ".wasm": "application/wasm",
-  ".pdf": "application/pdf",
-};
-
-// Handles which folder will be the root of server
-let folder;
-const lastArg = argv[argv.length - 1];
-if (fs.existsSync(lastArg)) {
-  if (lastArg === ".") {
-    folder = ".";
-  } else {
-    folder = lastArg;
-  }
-} else {
-  folder = ".";
-}
-const root = folder;
-
-/**
- *
- * @param {string} dir The current directory
- * @returns {string} The previous directory
- */
-const prevFolder = (dir) => {
-  dir = dir.split("/");
-  if (dir.length < 3) {
-    return ".";
-  }
-  dir.pop();
-  return dir.join("/");
-};
-
-/**
- *
- * @param {string} dir The current directory
- * @param {string[]} stringArr All of the folders/files in the directory
- * @returns {string} HTML for the current directory
- */
-const makeHTML = (dir, stringArr) => {
-  if (dir === "/") {
-    dir = ".";
-  }
-  let html = `
-  <h1>Index of ${dir}/</h1>
-
----
-<form action="${dir}" method="post" enctype="multipart/form-data">
-  <label for="file">Upload a file</label>
-    <input type="file" id="file" name="da_file">
-  <input type="submit">
-</form>
----
-
-
-  <div><a href="${prevFolder(dir)}">..</a> =:= ${prevFolder(
-    dir
-  )} dir:::${dir} </div>`;
-  stringArr.forEach((file) => {
-    let link = dir + "/" + file;
-    html += `<div><a href="${link}">${file}</a> =:= ${link} dir:::${dir} </div>`;
-  });
-  return html;
-};
+// const qs = require("querystring");
 
 /**
  *  THIS IS BROKEN BUT https://javascript.plainenglish.io/parsing-post-data-3-different-ways-in-node-js-e39d9d11ba8
@@ -152,13 +44,16 @@ const server = http.createServer((req, res) => {
     req.on("end", () => {
       let data = parseFilePost(rawData);
       console.log(data.name);
+      const stream = fs.createWriteStream(root + url + data.name);
+      stream.write(data.data, "binary");
+      stream.close();
       console.log(root + url + data.name);
-      fs.writeFile(root + url + data.name, data.data, (err) => {
-        if (err) {
-          console.log(err);
-          return;
-        }
-      });
+      // fs.writeFile(root + url + data.name, data.data, (err) => {
+      //   if (err) {
+      //     console.log(err);
+      //     return;
+      //   }
+      // });
     });
   }
 
@@ -170,6 +65,9 @@ const server = http.createServer((req, res) => {
       res.end("sorry bro, error", "utf-8");
     } else if (stats.isDirectory()) {
       fs.readdir(folder + url, (err, files) => {
+        if (err) {
+          console.log(err);
+        }
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end(makeHTML(url, files), "utf-8");
       });
@@ -182,23 +80,20 @@ const server = http.createServer((req, res) => {
         res.end(file, "utf-8");
       });
     } else {
-      res.writeHead(200, { "Content-Type": "text/html" });
-      res.end("something went wrong", "utf-8");
+      // res.writeHead(200, { "Content-Type": "text/html" });
+      console.log(err);
+      console.log(stats);
+      // res.end("something went wrong", "utf-8");
+
+      fs.readdir(folder + url, (err, files) => {
+        if (err) {
+          console.log(err);
+        }
+        console.log(stats.isSymbolicLink());
+        res.writeHead(200, { "Content-Type": "text/html" });
+        res.end(makeHTML(url, files), "utf-8");
+      });
     }
   });
 });
 server.listen(PORT);
-
-// Opens url in browser if -o flag is given
-let url = `http://${results[names[1]]}:${+PORT}/`;
-console.log(`Server running at: ${url}`);
-
-if (argv.find((value) => value === "-o")) {
-  var start =
-    process.platform == "darwin"
-      ? "open"
-      : process.platform == "win32"
-      ? "start"
-      : "xdg-open";
-  require("child_process").exec(start + " " + url);
-}
