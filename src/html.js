@@ -47,6 +47,12 @@ const makeHTML = (dir, stringArr) => {
   if (dir === "/") {
     dir = ".";
   }
+  let link;
+  let table = "";
+  stringArr.forEach((file) => {
+    link = dir + "/" + file;
+    table += `<tr><td>Icon</td><td>Data</td><td></td><td><a href="${link}">${file}</a></td></tr>`;
+  });
   let html = `
   <!doctype html>
   <html>
@@ -54,27 +60,41 @@ const makeHTML = (dir, stringArr) => {
     <title>Index of ${dir}</title>
     <style> body {background-color:grey;color:white;}</style>
   </head>
-
   <h1>Index of ${dir}/</h1>
 
----
-<form action="${dir}" method="post" enctype="multipart/form-data">
-  <label for="file">Upload a file</label>
-    <input type="file" id="file" name="da_file">
-  <input type="submit">
-</form>
----
+    <form action="${dir}" method="post" enctype="multipart/form-data">
+      <label for="file">Upload a file</label>
+        <input type="file" id="file" name="da_file">
+      <input type="submit">
+    </form>
 
+<table>
+  <tr>
+    <th>
+      Icon
+    </th>
+    <th>
+      Data
+    </th>
+    <th>
+      File Size
+    </th>
+    <th>
+      Link
+    </th>
+  </tr>
+  ${
+    prevFolder(dir) === "."
+      ? `<tr><td>Need Icon</td><td>Data</td><td></td><td>${prevFolder(
+          dir
+        )}</td></tr>`
+      : ""
+  }
 
-  <div><a href="${prevFolder(dir)}">..</a> =:= ${prevFolder(
-    dir
-  )} dir:::${dir} </div>
+  ${table}
+</table>
   </html>
   `;
-  stringArr.forEach((file) => {
-    let link = dir + "/" + file;
-    html += `<div><a href="${link}">${file}</a> =:= ${link} dir:::${dir} </div>`;
-  });
   return html;
 };
 
