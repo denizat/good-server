@@ -17,8 +17,8 @@ for (const name of Object.keys(nets)) {
     }
   }
 }
-console.log(names);
-console.log(results[names[1]]);
+// console.log(names);
+// console.log(results[names[1]]);
 
 const { argv } = require("process");
 let PORT = 8080;
@@ -103,14 +103,6 @@ const makeHTML = (dir, stringArr) => {
   <input type="submit">
 </form>
 ---
-            <form action="/" method="post">
-                <input type="text" name="fname" /><br />
-                <input type="number" name="age" /><br />
-                <input type="file" name="photo" /><br />
-                <button>Save</button>
-            </form>
-
-
 
 
   <div><a href="${prevFolder(dir)}">..</a> =:= ${prevFolder(
@@ -123,11 +115,29 @@ const makeHTML = (dir, stringArr) => {
   return html;
 };
 
+/**
+ *  THIS IS BROKEN BUT https://javascript.plainenglish.io/parsing-post-data-3-different-ways-in-node-js-e39d9d11ba8
+ * MIGHT KNOW HOW TO DO IT PROPERLY
+ *
+ * @param {string} stringData
+ * @returns
+ */
+const parseFilePost = (stringData) => {
+  lines = stringData.split("\n");
+  let fileName = lines[1].slice(
+    lines[1].indexOf("filename") + 10,
+    lines[1].lastIndexOf('"')
+  );
+  let body = lines.slice(4, lines.length - 3).join("\n");
+  console.log(lines.length - 4, lines.length - 0);
+  return { name: fileName, data: body };
+};
+
 const server = http.createServer((req, res) => {
   // Some files have spaces in their name so the url we get has to be fixed
   let url = req.url.replaceAll("%20", " ");
 
-  // Handles file uploads
+  // Handles file uploads (THIS IS BROKEN)
   if (req.method === "POST") {
     if (req.headers["content-type"] === "multipart/form-data") {
       // Use latin1 encoding to parse binary files correctly
@@ -140,14 +150,22 @@ const server = http.createServer((req, res) => {
       // fs.writeFile(root + url + )
     });
     req.on("end", () => {
-      console.log(qs.decode(rawData));
+      let data = parseFilePost(rawData);
+      console.log(data.name);
+      console.log(root + url + data.name);
+      fs.writeFile(root + url + data.name, data.data, (err) => {
+        if (err) {
+          console.log(err);
+          return;
+        }
+      });
     });
   }
 
-  // Get stats on requested folder/file
+  // Get stats on requested folder/file so that we can handle it properly
   fs.lstat(root + url, (err, stats) => {
     if (err) {
-      console.log(err);
+      // console.log(err);
       res.writeHead(200, { "Content-Type": "text/html" });
       res.end("sorry bro, error", "utf-8");
     } else if (stats.isDirectory()) {
