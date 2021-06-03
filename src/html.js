@@ -88,6 +88,11 @@ const makeHTML = (dir, stringArr) => {
         <input type="file" id="file" name="da_file">
       <input type="submit">
     </form>
+    <form method="post" enctype="multipart/form-data">  
+  <input id="username1" type="text" name="username">
+  <input id="password1" type="password" name="password">
+  <input type="submit">
+</form>
 
 <table>
   <tr>
@@ -116,7 +121,6 @@ const makeHTML = (dir, stringArr) => {
 </table>
   </html>
   `;
-  console.log(prevFolder(dir));
 
   return html;
 };

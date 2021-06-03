@@ -5,30 +5,44 @@ const { mimeTypes, makeHTML } = require("./html");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-// const qs = require("querystring");
+const qs = require("querystring");
 
-/**
- *  THIS IS BROKEN BUT https://javascript.plainenglish.io/parsing-post-data-3-different-ways-in-node-js-e39d9d11ba8
- * MIGHT KNOW HOW TO DO IT PROPERLY
- *
- * @param {string} stringData
- * @returns
- */
-const parseFilePost = (stringData) => {
-  lines = stringData.split("\n");
-  let fileName = lines[1].slice(
-    lines[1].indexOf("filename") + 10,
-    lines[1].lastIndexOf('"')
+// Stolen from https://javascript.plainenglish.io/parsing-post-data-3-different-ways-in-node-js-e39d9d11ba8
+const getBoundary = (req) => {
+  let contentType = req.headers["content-type"];
+  const contentTypeArray = contentType.split(";").map((item) => item.trim());
+  const boundaryPrefix = "boundary=";
+  let boundary = contentTypeArray.find((item) =>
+    item.startsWith(boundaryPrefix)
   );
-  let body = lines.slice(4, lines.length - 3).join("\n");
-  console.log(lines.length - 4, lines.length - 0);
-  return { name: fileName, data: body };
+  if (!boundary) return null;
+  boundary = boundary.slice(boundaryPrefix.length);
+  if (boundary) boundary = boundary.trim();
+  return boundary;
+};
+
+const getData = (data, boundary) => {
+  let rawData = data;
+  rawDataArr = rawData.split(boundary);
+  // console.log(rawDataArr);
+  let betterData = rawDataArr.slice(1, rawDataArr.length - 1);
+  // console.log(betterData);
+  lastIndex = betterData[0].lastIndexOf("\r\n");
+  // console.log(lastIndex);
+  betterData = betterData[0].slice(0, lastIndex);
+  // console.log(betterData);
+  realData = betterData.split("\r\n");
+  // console.log(realData);
+  realData = realData.splice(4, realData.length).join("\r\n");
+  // console.log(realData);
+  return realData;
 };
 
 const server = http.createServer((req, res) => {
   // Some files have spaces in their name so the url we get has to be fixed
   let url = req.url.replaceAll("%20", " ");
 
+  /////////////////////////////////////////////////////////////////////////////////// --- DANGER ZONE ---
   // Handles file uploads (THIS IS BROKEN)
   if (req.method === "POST") {
     if (req.headers["content-type"] === "multipart/form-data") {
@@ -37,25 +51,31 @@ const server = http.createServer((req, res) => {
     }
 
     let rawData = "";
+    // Note, the reason its called a chunk is because only chunck of data is given at a time, this function is called a billion times
     req.on("data", (chunk) => {
-      rawData += chunk; //.toString(); // convert Buffer to string
-      // fs.writeFile(root + url + )
+      rawData += chunk;
     });
+    // When we are done getting data
     req.on("end", () => {
-      let data = parseFilePost(rawData);
-      console.log(data.name);
-      const stream = fs.createWriteStream(root + url + data.name);
-      stream.write(data.data, "binary");
-      stream.close();
-      console.log(root + url + data.name);
-      // fs.writeFile(root + url + data.name, data.data, (err) => {
-      //   if (err) {
-      //     console.log(err);
-      //     return;
-      //   }
-      // });
+      boundary = getBoundary(req);
+      let result = {};
+      console.log("RawData: ", rawData);
+      console.log("Boundary: ", boundary);
+      let realData = getData(rawData, boundary);
+      console.log("REALDATA", realData);
+      fs.writeFile("a.out", realData, "utf8", (err) => {
+        if (err) {
+          console.log(err);
+        }
+      });
+
+      // console.log(rawDataArr[1].split("Content")[1]);
+      // for (const item of rawDataArr) {
+      //   console.log("An item:", item);
+      // }
     });
   }
+  /////////////////////////////////////////////////////////////////////////////////// --- DANGER ZONE ---
 
   // Get stats on requested folder/file so that we can handle it properly
   fs.lstat(root + url, (err, stats) => {
