@@ -16,7 +16,6 @@ const server = http.createServer((req, res) => {
   }
   // Some files have spaces in their name so the url we get has to be fixed
   url = url.replaceAll("%20", " ");
-  console.log(url);
 
   if (req.method === "POST") {
     let tmpUrl = root + url;
