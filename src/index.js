@@ -20,12 +20,14 @@ const server = http.createServer((req, res) => {
 
   if (req.method === "POST") {
     let tmpUrl = root + url;
+    let file = "";
     req.on("data", (chunk) => {
-      fs.appendFile(tmpUrl, chunk, (err) => {
-        if (err) {
-          console.log(err);
-        }
-      });
+      file += chunk;
+    });
+    req.on("end", () => {
+      // file = Buffer.from(file.split("base64,")[1], "base64");
+      file = file.split("base64,")[1];
+      fs.writeFileSync(tmpUrl, file, "base64");
     });
     // When we are done getting data
     // url = url.split("/").slice(0, -2).join("/");

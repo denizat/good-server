@@ -5,6 +5,7 @@ function handleUpload() {
     const reader = new FileReader();
     reader.onload = () => {
       // let f = new Uint8Array(reader.result);
+      // use this?https://stackabuse.com/encoding-and-decoding-base64-strings-in-node-js
       let f = reader.result;
       let oReq = new XMLHttpRequest();
       console.log(window.location.pathname + "/" + file.name);
@@ -21,6 +22,6 @@ function handleUpload() {
       oReq.setRequestHeader("url", window.location.pathname + "/" + file.name);
       oReq.send(f);
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsDataURL(file);
   }
 }
