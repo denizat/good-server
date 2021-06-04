@@ -4,7 +4,8 @@ function handleUpload() {
   if (inputFile.files.length) {
     const reader = new FileReader();
     reader.onload = () => {
-      let f = new Uint8Array(reader.result);
+      // let f = new Uint8Array(reader.result);
+      let f = reader.result;
       let oReq = new XMLHttpRequest();
       console.log(window.location.pathname + "/" + file.name);
       if (window.location.pathname === "/") {
@@ -12,7 +13,7 @@ function handleUpload() {
       } else {
         oReq.open(
           "POST",
-          window.location.pathname + "/ROOOOOOOR" + file.name + "COOR",
+          window.location.pathname + "/" + file.name + "",
           true
         );
       }
