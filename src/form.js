@@ -3,9 +3,9 @@ function handleUpload() {
   const file = inputFile.files[0];
   if (inputFile.files.length) {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      //   document.getElementById("test").innerHTML = e.target.result;
-      //   console.log(e.target.result);
+    reader.onload = () => {
+      let f = new Uint8Array(reader.result);
+      console.log(f);
 
       let oReq = new XMLHttpRequest();
       oReq.onload = () => {
@@ -17,13 +17,8 @@ function handleUpload() {
         oReq.open("POST", window.location.pathname + "/" + file.name, true);
       }
 
-      let blob = new Blob([file.name, "|BEGIN_FILE|", e.target.result], {
-        type: "text/plain",
-      });
-      oReq.send(blob);
+      oReq.send(f);
     };
-    // console.log(window.location.pathname + "/" + file.name);
-    reader.readAsText(file);
-    // console.log(file.name);
+    reader.readAsArrayBuffer(file);
   }
 }
