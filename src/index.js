@@ -8,35 +8,27 @@ const path = require("path");
 const qs = require("querystring");
 
 const server = http.createServer((req, res) => {
+  let url;
+  if (req.headers.url) {
+    url = req.headers.url;
+  } else {
+    url = req.url;
+  }
   // Some files have spaces in their name so the url we get has to be fixed
-  let url = req.url.replaceAll("%20", " ");
+  url = url.replaceAll("%20", " ");
+  console.log(url);
 
   if (req.method === "POST") {
-    // let rawData = "";
-    // let rawData = [];
-    // let rawData = new Buffer();
-    // let rawData = new Uint8Array();
+    let tmpUrl = root + url;
     req.on("data", (chunk) => {
-      fs.appendFile(root + url, chunk, (err) => {
+      fs.appendFile(tmpUrl, chunk, (err) => {
         if (err) {
           console.log(err);
         }
       });
-      // rawData += chunk;
-      // rawData.concat(Buffer.from(chunk, "binary"));
-      // rawData.push(chunk);
     });
     // When we are done getting data
-    req.on("end", () => {
-      // console.log(rawData.slice(0, 100));
-      // rawData = Buffer.from(rawData);
-      // console.log(rawData);
-      // fs.writeFile(root + url, rawData, (err) => {
-      //   if (err) {
-      //     console.log(err);
-      //   }
-      // });
-    });
+    // url = url.split("/").slice(0, -2).join("/");
   }
 
   // Get stats on requested folder/file so that we can handle it properly
