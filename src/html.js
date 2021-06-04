@@ -1,3 +1,4 @@
+const fs = require("fs");
 // These handle how the file extensions should be displayed
 const mimeTypes = {
   ".html": "text/html",
@@ -83,16 +84,13 @@ const makeHTML = (dir, stringArr) => {
   </head>
   <h1>Index of ${dir}/</h1>
 
-    <form action="${dir}" method="post" enctype="multipart/form-data">
+    <!-- <form action="${dir}" method="post" enctype="multipart/form-data"> --->
       <label for="file">Upload a file</label>
         <input type="file" id="file" name="da_file">
-      <input type="submit">
+      <button onclick="handleUpload()">Upload</button>
     </form>
-    <form method="post" enctype="multipart/form-data">  
-  <input id="username1" type="text" name="username">
-  <input id="password1" type="password" name="password">
-  <input type="submit">
-</form>
+
+    <div id='test'></div>
 
 <table>
   <tr>
@@ -119,6 +117,9 @@ const makeHTML = (dir, stringArr) => {
 
   ${table}
 </table>
+
+<script> ${fs.readFileSync("./form.js").toString()}</script>
+
   </html>
   `;
 

@@ -51,7 +51,7 @@ const server = http.createServer((req, res) => {
   if (req.method === "POST") {
     if (req.headers["content-type"] === "multipart/form-data") {
       // Use latin1 encoding to parse binary files correctly
-      req.setEncoding("binary");
+      req.setEncoding("utf-8");
     }
 
     let rawData = "";
@@ -61,24 +61,21 @@ const server = http.createServer((req, res) => {
     });
     // When we are done getting data
     req.on("end", () => {
-      boundary = getBoundary(req);
-      let result = {};
+      // boundary = getBoundary(req);
+      // let result = {};
       // console.log("RawData: ", rawData);
       // console.log(rawData.split(boundary));
       // console.log("Boundary: ", boundary);
-      let realData = getData(rawData, boundary);
+      // let realData = getData(rawData, boundary);
       // console.log("REALDATA", realData.data);
       // console.log("PATH:::", root + url + realData.fileName);
-      fs.writeFile(
-        root + url + realData.fileName,
-        realData.data,
-        "utf8",
-        (err) => {
-          if (err) {
-            console.log(err);
-          }
+      realData = rawData.split("|BEGIN_FILE|");
+      console.log(realData[0]);
+      fs.writeFile(root + url + realData[0], realData[1], (err) => {
+        if (err) {
+          console.log(err);
         }
-      );
+      });
     });
   }
 
