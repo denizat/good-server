@@ -5,7 +5,6 @@ const { mimeTypes, makeHTML } = require("./html");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const qs = require("querystring");
 
 const server = http.createServer((req, res) => {
   let url;
@@ -35,11 +34,11 @@ const server = http.createServer((req, res) => {
   // Get stats on requested folder/file so that we can handle it properly
   fs.lstat(root + url, (err, stats) => {
     if (err) {
-      // console.log(err);
-      res.writeHead(200, { "Content-Type": "text/html" });
+      console.log(err);
+      res.writeHead(500, { "Content-Type": "text/html" });
       res.end("sorry bro, error", "utf-8");
     } else if (stats.isDirectory()) {
-      fs.readdir(folder + url, (err, files) => {
+      fs.readdir(root + url, (err, files) => {
         if (err) {
           console.log(err);
         }
@@ -54,20 +53,14 @@ const server = http.createServer((req, res) => {
         });
         res.end(file, "utf-8");
       });
+    } else if (stats.isSymbolicLink()) {
+      res.writeHead(418, { "Content-Type": "text/html" });
+      res.end("Sorry bro, we cant handle symbolic links for now", "utf-8");
     } else {
-      // res.writeHead(200, { "Content-Type": "text/html" });
-      console.log(err);
       console.log(stats);
-      // res.end("something went wrong", "utf-8");
 
-      fs.readdir(folder + url, (err, files) => {
-        if (err) {
-          console.log(err);
-        }
-        console.log(stats.isSymbolicLink());
-        res.writeHead(200, { "Content-Type": "text/html" });
-        res.end(makeHTML(url, files), "utf-8");
-      });
+      res.writeHead(418, { "Content-Type": "text/html" });
+      res.end("Sorry bro, we cant handle symbolic links for now", "utf-8");
     }
   });
 });
