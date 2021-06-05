@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { upload } = require("./cli");
 // These handle how the file extensions should be displayed
 const mimeTypes = {
   ".html": "text/html",
@@ -84,11 +85,13 @@ const makeHTML = (dir, stringArr) => {
   </style>
   </head>
   <h1>Index of ${dir}/</h1>
-
-      <label for="file">Upload a file</label>
+${
+  upload
+    ? `<label for="file">Upload a file</label>
         <input type="file" id="file" name="da_file">
-      <button onclick="handleUpload()">Upload</button>
-
+      <button onclick="handleUpload()">Upload</button>`
+    : ""
+}
 <table>
   <tr>
     <th>
@@ -104,7 +107,11 @@ const makeHTML = (dir, stringArr) => {
   ${table}
 </table>
 
-<script> ${fs.readFileSync(path.resolve(__dirname, "form.js"))}</script>
+${
+  upload
+    ? `<script> ${fs.readFileSync(path.resolve(__dirname, "form.js"))}</script>`
+    : ""
+}
 
   </html>
   `;

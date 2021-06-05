@@ -43,6 +43,12 @@ if (argv.find((value) => value === "-o")) {
   require("child_process").exec(start + " " + url);
 }
 
+if (argv.find((value) => value === "-u")) {
+  exports.upload = true;
+} else {
+  exports.upload = false;
+}
+
 // Handles which folder will be the root of server
 let folder;
 const lastArg = argv[argv.length - 1];

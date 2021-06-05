@@ -1,4 +1,4 @@
-const { folder, PORT } = require("./cli");
+const { folder, PORT, upload } = require("./cli");
 const root = folder;
 const { mimeTypes, makeHTML } = require("./html");
 
@@ -16,7 +16,7 @@ const server = http.createServer((req, res) => {
   // Some files have spaces in their name so the url we get has to be fixed
   url = url.replaceAll("%20", " ");
 
-  if (req.method === "POST") {
+  if (upload && req.method === "POST") {
     let tmpUrl = root + url;
     let file = "";
     req.on("data", (chunk) => {
