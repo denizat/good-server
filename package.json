@@ -11,6 +11,7 @@
   },
   "pkg": {
     "scripts": "src/*.js",
+    "assets": "src/form.js",
     "outputPath": "dist"
   },
   "devDependencies": {
