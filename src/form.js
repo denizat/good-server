@@ -8,7 +8,6 @@ function handleUpload() {
       // use this?https://stackabuse.com/encoding-and-decoding-base64-strings-in-node-js
       let f = reader.result;
       let oReq = new XMLHttpRequest();
-      console.log(window.location.pathname + "/" + file.name);
       if (window.location.pathname === "/") {
         oReq.open("POST", window.location.pathname + file.name, true);
       } else {
@@ -18,7 +17,9 @@ function handleUpload() {
           true
         );
       }
-
+      oReq.onload = () => {
+        window.location.reload();
+      };
       oReq.setRequestHeader("url", window.location.pathname + "/" + file.name);
       oReq.send(f);
     };
