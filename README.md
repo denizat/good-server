@@ -1,3 +1,7 @@
+#
+# I refuse to work on it more in the month of June.
+# 
+
 # Notes
 * File uploads work on everything except safari.
 
